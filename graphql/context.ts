@@ -1,10 +1,9 @@
 /* Apollo Server Context */
-import { User } from "@prisma/client";
-import jwt, { JwtPayload } from "jsonwebtoken";
+import jwt, {JwtPayload} from "jsonwebtoken";
 import prisma from "../utils/server/prisma";
 
 // Promise<{ currentUser: User | null } | void>
-export const context = async ({ req }: { req: any }): Promise<any> => {
+export const context = async ({req}: {req: any}): Promise<any> => {
   const auth = req ? req.headers.authorization : null;
   if (auth && auth.toLowerCase().startsWith("bearer ")) {
     const decodedToken = jwt.verify(
@@ -16,6 +15,6 @@ export const context = async ({ req }: { req: any }): Promise<any> => {
         id: (decodedToken as JwtPayload).id,
       },
     });
-    return { currentUser };
+    return {currentUser};
   }
 };

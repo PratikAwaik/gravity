@@ -1,7 +1,7 @@
-import { Post } from "@prisma/client";
-import { Context } from "apollo-server-core";
-import { IApolloContext } from "./context";
-import { Direction, MediaType, PostType } from "./enums";
+import {Post} from "@prisma/client";
+import {Context} from "apollo-server-core";
+import {IApolloContext} from "./context";
+import {Direction, MediaType, PostType} from "./enums";
 
 export interface IGetAllPostArgs {
   pageNo?: number;
@@ -41,7 +41,7 @@ export interface IPostsController {
     _: unknown,
     __: unknown,
     context: Context<IApolloContext>
-  ): Promise<Post[]>;
+  ): Promise<Post[] | Error>;
   getPostById(
     _: unknown,
     args: IGetPostByIdArgs,

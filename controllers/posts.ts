@@ -1,7 +1,7 @@
-import { Post } from "@prisma/client";
-import { Context } from "apollo-server-core";
-import { IApolloContext } from "../models/server/context";
-import { Direction, PostType } from "../models/server/enums";
+import {Post} from "@prisma/client";
+import {Context} from "apollo-server-core";
+import {IApolloContext} from "../models/server/context";
+import {Direction, PostType} from "../models/server/enums";
 import {
   ICreatePostArgs,
   IDeletePostArgs,
@@ -17,7 +17,7 @@ import {
   handleError,
   throwForbiddenError,
 } from "../utils/server/errors";
-import { getScore } from "../utils/server/helpers";
+import {getScore} from "../utils/server/helpers";
 import prisma from "../utils/server/prisma";
 import {
   validateCreatePostDetails,
@@ -26,7 +26,7 @@ import {
   validateUpdatePostScore,
 } from "../validations/posts";
 import ogs from "open-graph-scraper";
-import { PAGINATION_LIMIT } from "../utils/constants";
+import {PAGINATION_LIMIT} from "../utils/constants";
 
 export default class PostsController implements IPostsController {
   /**
@@ -36,42 +36,46 @@ export default class PostsController implements IPostsController {
     _: unknown,
     args: IGetAllPostArgs,
     context: Context<IApolloContext>
-  ): Promise<Post[]> => {
-    return await prisma.post.findMany({
-      where: {
-        communityId: args.communityId,
-        authorId: args.userId,
-        OR: [
-          {
-            title: { contains: args.search ?? "", mode: "insensitive" },
-            content: { contains: args.search ?? "", mode: "insensitive" },
-          },
-        ],
-      },
-      include: {
-        author: true,
-        community: {
-          include: {
-            members: {
-              where: {
-                id: context?.currentUser?.id,
-              },
+  ): Promise<Post[] | Error> => {
+    try {
+      return await prisma.post.findMany({
+        where: {
+          communityId: args.communityId,
+          authorId: args.userId,
+          OR: [
+            {
+              title: {contains: args.search ?? "", mode: "insensitive"},
+              content: {contains: args.search ?? "", mode: "insensitive"},
             },
-            admin: true,
+          ],
+        },
+        include: {
+          author: true,
+          community: {
+            include: {
+              members: {
+                where: {
+                  id: context?.currentUser?.id,
+                },
+              },
+              admin: true,
+            },
+          },
+          postScores: {
+            where: {
+              userId: context.currentUser?.id,
+            },
           },
         },
-        postScores: {
-          where: {
-            userId: context.currentUser?.id,
-          },
+        orderBy: {
+          createdAt: "desc",
         },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip: (args.pageNo ?? 0) * PAGINATION_LIMIT,
-      take: PAGINATION_LIMIT,
-    });
+        skip: (args.pageNo ?? 0) * PAGINATION_LIMIT,
+        take: PAGINATION_LIMIT,
+      });
+    } catch (error) {
+      return handleError(error as Error);
+    }
   };
 
   /**
@@ -137,7 +141,7 @@ export default class PostsController implements IPostsController {
         const options = {
           url: args.content,
         };
-        const { result } = await ogs(options);
+        const {result} = await ogs(options);
         articleImage = (result as any).ogImage?.url;
       }
 
@@ -286,11 +290,11 @@ export default class PostsController implements IPostsController {
 
       const postScore = await prisma.postScore.findFirst({
         where: {
-          AND: [{ userId: context.currentUser.id }, { postId: args.postId }],
+          AND: [{userId: context.currentUser.id}, {postId: args.postId}],
         },
       });
 
-      const { score: newScore, userKarma } = getScore(
+      const {score: newScore, userKarma} = getScore(
         args,
         post,
         postScore,
@@ -322,7 +326,7 @@ export default class PostsController implements IPostsController {
       }
 
       const updatedPost = await prisma.post.update({
-        where: { id: args.postId },
+        where: {id: args.postId},
         data: {
           score: newScore,
           ...(args.direction !== Direction.UNVOTE && {
